@@ -9,21 +9,22 @@ namespace TcpEcho.Shared
 {
     /// <summary>
     /// Prints a table of every connection - active and terminated - on a fixed interval,
-    /// and once more on shutdown.
+    /// immediately whenever a connection is established or closed, and once on shutdown.
     /// </summary>
     public class StatsReporter
     {
         private readonly ConnectionRegistry _registry;
         private readonly ILogger _logger;
         private readonly TimeSpan _interval;
-        private readonly string _title;
+        private readonly string _role;
 
-        public StatsReporter(ConnectionRegistry registry, ILogger logger, TimeSpan interval, string title)
+        /// <param name="role">SERVER or CLIENT; used as the prefix of every report heading.</param>
+        public StatsReporter(ConnectionRegistry registry, ILogger logger, TimeSpan interval, string role)
         {
             _registry = registry;
             _logger = logger;
             _interval = interval;
-            _title = title;
+            _role = role;
         }
 
         public async Task RunAsync(CancellationToken ct)
@@ -33,13 +34,33 @@ namespace TcpEcho.Shared
                 while (!ct.IsCancellationRequested)
                 {
                     await Task.Delay(_interval, ct).ConfigureAwait(false);
-                    Report(_title);
+                    Report(_role + " CONNECTION STATISTICS");
                 }
             }
             catch (OperationCanceledException)
             {
                 // Shutdown; the final report is written by the caller.
             }
+        }
+
+        public void ReportFinal()
+        {
+            Report(_role + " FINAL CONNECTION STATISTICS");
+        }
+
+        /// <summary>Immediate report for a connection that has just come up.</summary>
+        public void ReportConnectionOpened(ConnectionStats stats)
+        {
+            Report(_role + " CONNECTION #" + stats.Id + " ESTABLISHED");
+        }
+
+        /// <summary>
+        /// Immediate report for a connection that has just gone away. Call it after the
+        /// connection has been closed in the registry, so the row shows CLOSED and the reason.
+        /// </summary>
+        public void ReportConnectionClosed(ConnectionStats stats)
+        {
+            Report(_role + " CONNECTION #" + stats.Id + " CLOSED");
         }
 
         public void Report(string title)

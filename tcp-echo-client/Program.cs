@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -42,7 +42,7 @@ namespace tcp_echo_client
             {
                 ILogger logger = loggerFactory.CreateLogger("client");
                 var registry = new ConnectionRegistry(options.ClosedHistoryLimit);
-                var reporter = new StatsReporter(registry, logger, options.StatsInterval, "CLIENT CONNECTION STATISTICS");
+                var reporter = new StatsReporter(registry, logger, options.StatsInterval, "CLIENT");
 
                 using (CancellationTokenSourceHolder shutdown = Bootstrap.CreateShutdownToken(logger))
                 {
@@ -51,11 +51,11 @@ namespace tcp_echo_client
                         options.Host, options.Port, options.SendIntervalSeconds, options.JitterFraction, options.StatsIntervalSeconds);
 
                     Task statsTask = reporter.RunAsync(shutdown.Token);
-                    await SuperviseAsync(options, registry, loggerFactory, logger, shutdown.Token).ConfigureAwait(false);
+                    await SuperviseAsync(options, registry, reporter, loggerFactory, logger, shutdown.Token).ConfigureAwait(false);
                     await statsTask.ConfigureAwait(false);
 
                     registry.CloseAll("client shutdown");
-                    reporter.Report("CLIENT FINAL CONNECTION STATISTICS");
+                    reporter.ReportFinal();
                 }
 
                 logger.LogInformation("Client stopped.");
@@ -72,11 +72,12 @@ namespace tcp_echo_client
         private static async Task SuperviseAsync(
             ClientOptions options,
             ConnectionRegistry registry,
+            StatsReporter reporter,
             ILoggerFactory loggerFactory,
             ILogger logger,
             CancellationToken ct)
         {
-            var session = new ClientSession(options, registry, loggerFactory.CreateLogger("client.conn"));
+            var session = new ClientSession(options, registry, reporter, loggerFactory.CreateLogger("client.conn"));
             TimeSpan backoff = options.ReconnectInitialDelay;
 
             while (!ct.IsCancellationRequested)

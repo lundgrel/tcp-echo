@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Globalization;
 using System.IO;
 using System.Net.Sockets;
@@ -17,14 +17,16 @@ namespace tcp_echo_client
     {
         private readonly ClientOptions _options;
         private readonly ConnectionRegistry _registry;
+        private readonly StatsReporter _reporter;
         private readonly ILogger _logger;
         private readonly SemaphoreSlim _writeLock = new SemaphoreSlim(1, 1);
         private int _sequence;
 
-        public ClientSession(ClientOptions options, ConnectionRegistry registry, ILogger logger)
+        public ClientSession(ClientOptions options, ConnectionRegistry registry, StatsReporter reporter, ILogger logger)
         {
             _options = options;
             _registry = registry;
+            _reporter = reporter;
             _logger = logger;
         }
 
@@ -54,6 +56,7 @@ namespace tcp_echo_client
                 client.NoDelay = true;
                 stats = _registry.Open(SafeRemote(client, target));
                 _logger.LogInformation("Connection #{Id} established to {Remote}.", stats.Id, stats.RemoteEndPoint);
+                _reporter.ReportConnectionOpened(stats);
 
                 closeReason = await PumpAsync(client, stats, shutdownToken).ConfigureAwait(false);
             }
@@ -74,6 +77,7 @@ namespace tcp_echo_client
                 "Connection #{Id} to {Remote} closed after {Duration} ({Reason}); tx {MsgTx} msgs/{BytesTx} B, rx {MsgRx} msgs/{BytesRx} B.",
                 stats.Id, stats.RemoteEndPoint, stats.Duration, closeReason,
                 stats.MessagesSent, stats.BytesSent, stats.MessagesReceived, stats.BytesReceived);
+            _reporter.ReportConnectionClosed(stats);
             return closeReason;
         }
 
