@@ -1,0 +1,34 @@
+<Project>
+  <!--
+    Merges the Microsoft.Extensions.* dependencies into the executable so a Release
+    build produces a single .exe. Referenced from both csproj via ILRepackTargetsFile;
+    defining it replaces the default target shipped with ILRepack.Lib.MSBuild.Task.
+
+    Union="true" is required: Microsoft.Extensions.Logging and
+    Microsoft.Extensions.Logging.Configuration both declare
+    Microsoft.Extensions.Logging.LoggingBuilderExtensions, and the default
+    (error on duplicate) aborts the merge. Union merges the two into one type.
+
+    server.json / client.json are data, not assemblies - they stay next to the exe.
+  -->
+  <Target Name="ILRepackMerge" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+    <ItemGroup>
+      <ILRepackInput Include="$(OutputPath)$(TargetName)$(TargetExt)" />
+      <ILRepackInput Include="$(OutputPath)*.dll" />
+    </ItemGroup>
+    <ILRepack
+      Parallel="true"
+      DebugInfo="true"
+      Union="true"
+      AllowDuplicateResources="false"
+      TargetKind="SameAsPrimaryAssembly"
+      InputAssemblies="@(ILRepackInput)"
+      KeyFile="$(KeyFile)"
+      OutputFile="$(OutputPath)$(TargetName)$(TargetExt)" />
+  </Target>
+
+  <!-- The merged assemblies are now inside the exe; drop the loose copies. -->
+  <Target Name="ILRepackCleanup" AfterTargets="ILRepackMerge" Condition="'$(Configuration)' == 'Release'">
+    <Delete Files="@(ReferenceCopyLocalPaths->'$(OutDir)%(DestinationSubDirectory)%(Filename)%(Extension)')" />
+  </Target>
+</Project>
