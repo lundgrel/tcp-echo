@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Net.Sockets;
 using System.Threading;
@@ -16,15 +16,17 @@ namespace tcp_echo_server
     {
         private readonly TcpClient _client;
         private readonly ConnectionRegistry _registry;
+        private readonly StatsReporter _reporter;
         private readonly ConnectionStats _stats;
         private readonly ServerOptions _options;
         private readonly ILogger _logger;
         private readonly SemaphoreSlim _writeLock = new SemaphoreSlim(1, 1);
 
-        public ServerConnection(TcpClient client, ConnectionRegistry registry, ConnectionStats stats, ServerOptions options, ILogger logger)
+        public ServerConnection(TcpClient client, ConnectionRegistry registry, StatsReporter reporter, ConnectionStats stats, ServerOptions options, ILogger logger)
         {
             _client = client;
             _registry = registry;
+            _reporter = reporter;
             _stats = stats;
             _options = options;
             _logger = logger;
@@ -69,6 +71,7 @@ namespace tcp_echo_server
                 "Connection #{Id} from {Remote} closed after {Duration} ({Reason}); tx {MsgTx} msgs/{BytesTx} B, rx {MsgRx} msgs/{BytesRx} B.",
                 _stats.Id, _stats.RemoteEndPoint, _stats.Duration, closeReason,
                 _stats.MessagesSent, _stats.BytesSent, _stats.MessagesReceived, _stats.BytesReceived);
+            _reporter.ReportConnectionClosed(_stats);
         }
 
         /// <summary>Reads client messages and echoes the identical payload back.</summary>

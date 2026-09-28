@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -41,7 +41,7 @@ namespace tcp_echo_server
             {
                 ILogger logger = loggerFactory.CreateLogger("server");
                 var registry = new ConnectionRegistry(options.ClosedHistoryLimit);
-                var reporter = new StatsReporter(registry, logger, options.StatsInterval, "SERVER CONNECTION STATISTICS");
+                var reporter = new StatsReporter(registry, logger, options.StatsInterval, "SERVER");
 
                 using (CancellationTokenSourceHolder shutdown = Bootstrap.CreateShutdownToken(logger))
                 {
@@ -62,11 +62,11 @@ namespace tcp_echo_server
                         options.ListenAddress, options.Port, options.PushIntervalSeconds, options.JitterFraction, options.StatsIntervalSeconds);
 
                     Task statsTask = reporter.RunAsync(shutdown.Token);
-                    await AcceptLoopAsync(listener, registry, options, loggerFactory, logger, shutdown.Token).ConfigureAwait(false);
+                    await AcceptLoopAsync(listener, registry, reporter, options, loggerFactory, logger, shutdown.Token).ConfigureAwait(false);
                     await statsTask.ConfigureAwait(false);
 
                     registry.CloseAll("server shutdown");
-                    reporter.Report("SERVER FINAL CONNECTION STATISTICS");
+                    reporter.ReportFinal();
                 }
 
                 logger.LogInformation("Server stopped.");
@@ -78,6 +78,7 @@ namespace tcp_echo_server
         private static async Task AcceptLoopAsync(
             TcpListener listener,
             ConnectionRegistry registry,
+            StatsReporter reporter,
             ServerOptions options,
             ILoggerFactory loggerFactory,
             ILogger logger,
@@ -113,8 +114,9 @@ namespace tcp_echo_server
                     string remote = SafeRemote(client);
                     ConnectionStats stats = registry.Open(remote);
                     logger.LogInformation("Connection #{Id} accepted from {Remote}.", stats.Id, remote);
+                    reporter.ReportConnectionOpened(stats);
 
-                    var connection = new ServerConnection(client, registry, stats, options, loggerFactory.CreateLogger("server.conn"));
+                    var connection = new ServerConnection(client, registry, reporter, stats, options, loggerFactory.CreateLogger("server.conn"));
 
                     // Detached on purpose: one client's failure must not touch the accept loop.
                     Task ignored = connection.RunAsync(ct);
