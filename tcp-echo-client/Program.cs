@@ -34,7 +34,7 @@ namespace tcp_echo_client
 
         private static async Task<int> MainAsync(string[] args)
         {
-            IConfigurationRoot configuration = Bootstrap.BuildConfiguration(args, SwitchMappings);
+            IConfigurationRoot configuration = Bootstrap.BuildConfiguration("client.json", args, SwitchMappings);
             var options = new ClientOptions();
             configuration.Bind(options);
 

@@ -33,7 +33,7 @@ namespace tcp_echo_server
 
         private static async Task<int> MainAsync(string[] args)
         {
-            IConfigurationRoot configuration = Bootstrap.BuildConfiguration(args, SwitchMappings);
+            IConfigurationRoot configuration = Bootstrap.BuildConfiguration("server.json", args, SwitchMappings);
             var options = new ServerOptions();
             configuration.Bind(options);
 

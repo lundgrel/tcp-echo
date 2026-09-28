@@ -9,11 +9,11 @@ namespace TcpEcho.Shared
     /// <summary>Configuration and console logging setup shared by both executables.</summary>
     public static class Bootstrap
     {
-        public static IConfigurationRoot BuildConfiguration(string[] args, IDictionary<string, string> switchMappings)
+        public static IConfigurationRoot BuildConfiguration(string settingsFileName, string[] args, IDictionary<string, string> switchMappings)
         {
             return new ConfigurationBuilder()
                 .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+                .AddJsonFile(settingsFileName, optional: true, reloadOnChange: false)
                 .AddCommandLine(args, switchMappings)
                 .Build();
         }
