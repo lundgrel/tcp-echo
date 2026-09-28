@@ -1,4 +1,4 @@
 <Solution>
-  <Project Path="tcp-echo-client/tcp-echo-client.csproj" />
-  <Project Path="tcp-echo-server/tcp-echo-server.csproj" />
+  <Project Path="tcp-echo-client/tcp-echo-client.csproj" Id="9d66c068-58e3-432a-ae3a-4982592446f3" />
+  <Project Path="tcp-echo-server/tcp-echo-server.csproj" Id="53d263a5-5e3b-45af-9306-6d8fa61dc556" />
 </Solution>
