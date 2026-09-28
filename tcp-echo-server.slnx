@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="tcp-echo-client/tcp-echo-client.csproj" />
+  <Project Path="tcp-echo-server/tcp-echo-server.csproj" />
+</Solution>

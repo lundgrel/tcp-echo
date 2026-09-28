@@ -1,0 +1,12 @@
+{
+  "Host": "127.0.0.1",
+  "Port": 5001,
+  "SendIntervalSeconds": 5,
+  "JitterFraction": 0.2,
+  "StatsIntervalSeconds": 60,
+  "MaxFrameBytes": 65536,
+  "ClosedHistoryLimit": 100,
+  "ReconnectInitialDelaySeconds": 1,
+  "ReconnectMaxDelaySeconds": 30,
+  "LogLevel": "Information"
+}
