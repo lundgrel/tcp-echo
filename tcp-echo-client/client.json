@@ -8,5 +8,5 @@
   "ClosedHistoryLimit": 100,
   "ReconnectInitialDelaySeconds": 1,
   "ReconnectMaxDelaySeconds": 30,
-  "LogLevel": "Information"
+  "LogLevel": "Information" // "Trace", "Debug", "Information","Warning","Error","Critical","None"
 }

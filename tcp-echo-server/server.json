@@ -6,5 +6,5 @@
   "StatsIntervalSeconds": 60,
   "MaxFrameBytes": 65536,
   "ClosedHistoryLimit": 100,
-  "LogLevel": "Information"
+  "LogLevel": "Information" // "Trace", "Debug", "Information","Warning","Error","Critical","None"
 }
