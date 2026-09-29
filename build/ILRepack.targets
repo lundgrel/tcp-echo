@@ -24,7 +24,7 @@
       TargetKind="SameAsPrimaryAssembly"
       InputAssemblies="@(ILRepackInput)"
       KeyFile="$(KeyFile)"
-      OutputFile="$(OutputPath)..\..\..\assets\$(TargetName)$(TargetExt)" />
+      OutputFile="$(MSBuildThisFileDirectory)..\assets\$(TargetName)$(TargetExt)" />
   </Target>
 
   <!-- The merged assemblies are now inside the exe; drop the loose copies. -->
