@@ -1,6 +1,7 @@
 @echo off
+echo === Installing the TCP Echo SERVER service (TcpEchoServer) ===
 rem Installs TCP Echo Server as a Windows service (run as Administrator).
-rem Extra arguments are passed to the exe, e.g.: install-service.bat -p 6000
+rem Extra arguments are passed to the exe, e.g.: install-server-service.bat -p 6000
 net session >nul 2>&1 || (echo Please run this from an elevated prompt. & exit /b 1)
 sc.exe create TcpEchoServer binPath= "\"%~dp0tcp-echo-server.exe\" %*" start= auto DisplayName= "TCP Echo Server"
 if errorlevel 1 exit /b %errorlevel%
