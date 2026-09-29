@@ -20,6 +20,8 @@ namespace tcp_echo_client
             { "--host", "Host" },
             { "-p", "Port" },
             { "--port", "Port" },
+            { "-n", "Connections" },
+            { "--connections", "Connections" },
             { "-i", "SendIntervalSeconds" },
             { "--interval", "SendIntervalSeconds" },
             { "-s", "StatsIntervalSeconds" },
@@ -59,12 +61,16 @@ namespace tcp_echo_client
 
                 using (CancellationTokenSourceHolder shutdown = Bootstrap.CreateShutdownToken(logger, stopToken))
                 {
+                    int connections = Math.Max(1, options.Connections);
                     logger.LogInformation(
-                        "Connecting to {Host}:{Port}. Sending every {Send}s +/-{Jitter:P0}, statistics every {Stats}s.",
-                        options.Host, options.Port, options.SendIntervalSeconds, options.JitterFraction, options.StatsIntervalSeconds);
+                        "Opening {Count} connection(s) to {Host}:{Port}. Sending every {Send}s +/-{Jitter:P0}, statistics every {Stats}s.",
+                        connections, options.Host, options.Port, options.SendIntervalSeconds, options.JitterFraction, options.StatsIntervalSeconds);
 
                     Task statsTask = reporter.RunAsync(shutdown.Token);
-                    await SuperviseAsync(options, registry, reporter, loggerFactory, logger, shutdown.Token).ConfigureAwait(false);
+                    var supervisors = new List<Task>();
+                    for (int i = 0; i < connections; i++)
+                        supervisors.Add(SuperviseAsync(options, registry, reporter, loggerFactory, logger, shutdown.Token));
+                    await Task.WhenAll(supervisors).ConfigureAwait(false);
                     await statsTask.ConfigureAwait(false);
 
                     registry.CloseAll("client shutdown");
@@ -78,7 +84,7 @@ namespace tcp_echo_client
         }
 
         /// <summary>
-        /// Keeps exactly one connection alive: reconnects with exponential, jittered backoff
+        /// Keeps one connection alive (one supervisor runs per configured connection): reconnects with exponential, jittered backoff
         /// whenever the current one ends. Every attempt that connects becomes its own row in
         /// the statistics table, so the history shows the terminated connections too.
         /// </summary>

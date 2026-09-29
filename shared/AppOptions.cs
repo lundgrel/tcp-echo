@@ -39,6 +39,9 @@ namespace TcpEcho.Shared
         /// <summary>Base interval between messages sent to the server.</summary>
         public int SendIntervalSeconds { get; set; } = 5;
 
+        /// <summary>How many parallel connections to keep open to the server.</summary>
+        public int Connections { get; set; } = 1;
+
         public int ReconnectInitialDelaySeconds { get; set; } = 1;
         public int ReconnectMaxDelaySeconds { get; set; } = 30;
 
