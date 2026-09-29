@@ -9,7 +9,7 @@
     Microsoft.Extensions.Logging.LoggingBuilderExtensions, and the default
     (error on duplicate) aborts the merge. Union merges the two into one type.
 
-    server.json / client.json are data, not assemblies - they stay next to the exe.
+    server.ini / client.ini are data, not assemblies - they stay next to the exe.
   -->
   <Target Name="ILRepackMerge" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
     <ItemGroup>

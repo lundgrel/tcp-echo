@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ServiceProcess;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
@@ -27,24 +28,36 @@ namespace tcp_echo_client
             { "--log", "LogLevel" },
         };
 
+        private const string ServiceName = "TcpEchoClient";
+
         private static int Main(string[] args)
         {
-            return MainAsync(args).GetAwaiter().GetResult();
+            int? handled = ServiceCommands.TryHandle(args, ServiceName, "TCP Echo Client", "Keeps a TCP connection open to the echo server and exchanges periodic messages.");
+            if (handled.HasValue)
+                return handled.Value;
+
+            if (!Environment.UserInteractive)
+            {
+                ServiceBase.Run(new EchoService(ServiceName, token => MainAsync(args, true, token)));
+                return 0;
+            }
+
+            return MainAsync(args, false, CancellationToken.None).GetAwaiter().GetResult();
         }
 
-        private static async Task<int> MainAsync(string[] args)
+        private static async Task<int> MainAsync(string[] args, bool asService, CancellationToken stopToken)
         {
-            IConfigurationRoot configuration = Bootstrap.BuildConfiguration("client.json", args, SwitchMappings);
+            IConfigurationRoot configuration = Bootstrap.BuildConfiguration("client.ini", args, SwitchMappings);
             var options = new ClientOptions();
             configuration.Bind(options);
 
-            using (ILoggerFactory loggerFactory = Bootstrap.CreateLoggerFactory(configuration))
+            using (ILoggerFactory loggerFactory = Bootstrap.CreateLoggerFactory(configuration, asService, "tcp-echo-client"))
             {
                 ILogger logger = loggerFactory.CreateLogger("client");
                 var registry = new ConnectionRegistry(options.ClosedHistoryLimit);
                 var reporter = new StatsReporter(registry, logger, options.StatsInterval, "CLIENT");
 
-                using (CancellationTokenSourceHolder shutdown = Bootstrap.CreateShutdownToken(logger))
+                using (CancellationTokenSourceHolder shutdown = Bootstrap.CreateShutdownToken(logger, stopToken))
                 {
                     logger.LogInformation(
                         "Connecting to {Host}:{Port}. Sending every {Send}s +/-{Jitter:P0}, statistics every {Stats}s.",

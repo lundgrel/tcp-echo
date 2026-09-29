@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.ServiceProcess;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
@@ -26,24 +27,36 @@ namespace tcp_echo_server
             { "--log", "LogLevel" },
         };
 
+        private const string ServiceName = "TcpEchoServer";
+
         private static int Main(string[] args)
         {
-            return MainAsync(args).GetAwaiter().GetResult();
+            int? handled = ServiceCommands.TryHandle(args, ServiceName, "TCP Echo Server", "Accepts TCP echo clients and pushes periodic events to them.");
+            if (handled.HasValue)
+                return handled.Value;
+
+            if (!Environment.UserInteractive)
+            {
+                ServiceBase.Run(new EchoService(ServiceName, token => MainAsync(args, true, token)));
+                return 0;
+            }
+
+            return MainAsync(args, false, CancellationToken.None).GetAwaiter().GetResult();
         }
 
-        private static async Task<int> MainAsync(string[] args)
+        private static async Task<int> MainAsync(string[] args, bool asService, CancellationToken stopToken)
         {
-            IConfigurationRoot configuration = Bootstrap.BuildConfiguration("server.json", args, SwitchMappings);
+            IConfigurationRoot configuration = Bootstrap.BuildConfiguration("server.ini", args, SwitchMappings);
             var options = new ServerOptions();
             configuration.Bind(options);
 
-            using (ILoggerFactory loggerFactory = Bootstrap.CreateLoggerFactory(configuration))
+            using (ILoggerFactory loggerFactory = Bootstrap.CreateLoggerFactory(configuration, asService, "tcp-echo-server"))
             {
                 ILogger logger = loggerFactory.CreateLogger("server");
                 var registry = new ConnectionRegistry(options.ClosedHistoryLimit);
                 var reporter = new StatsReporter(registry, logger, options.StatsInterval, "SERVER");
 
-                using (CancellationTokenSourceHolder shutdown = Bootstrap.CreateShutdownToken(logger))
+                using (CancellationTokenSourceHolder shutdown = Bootstrap.CreateShutdownToken(logger, stopToken))
                 {
                     TcpListener listener;
                     try

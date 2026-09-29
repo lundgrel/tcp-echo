@@ -2,7 +2,7 @@ using System;
 
 namespace TcpEcho.Shared
 {
-    /// <summary>Settings common to both ends, bound from appsettings.json / command line.</summary>
+    /// <summary>Settings common to both ends, bound from the .ini settings file / command line.</summary>
     public abstract class CommonOptions
     {
         /// <summary>Random variation applied to every interval, as a fraction (0.2 = +/-20%).</summary>
